@@ -1,4 +1,41 @@
+import argparse
+import sys
 from math import ceil, log, pow
+from typing import Dict, Any
+
+typ, pay, pri, per, inr = 'type', 'payment', 'principal', 'periods', 'interest'
+
+
+def main():
+    args = define_arguments()
+    print(args)
+    if errors_found(args):
+        print('Incorrect parameters')
+    else:
+        # todo the main branch
+        pass
+
+
+def define_arguments() -> Dict[str, Any]:
+    dash = '--'
+    parser = argparse.ArgumentParser(description='This program calculates different parameters of a loan')
+    parser.add_argument(dash + typ, choices=['annuity', 'diff'])
+    parser.add_argument(dash + pay, type=float)
+    parser.add_argument(dash + pri, type=int)
+    parser.add_argument(dash + per, type=int)
+    parser.add_argument(dash + inr, type=float)
+    return vars(parser.parse_args())
+
+
+def errors_found(args: Dict[str, Any]) -> bool:
+    diff_payment_collision = args.get(typ) and args.get(typ) == 'diff' and args.get(pay)
+    interest_not_found = args.get(inr) is None
+    lack_of_params = 4 > len(list(filter(lambda x: x[1] is not None, args.items())))
+    return diff_payment_collision or interest_not_found or lack_of_params
+
+
+# todo: add Calculation of differentiated payments
+#  replace old params with new ones
 
 [p, a, n, i] = [r for r in range(4)]  # indices:  0, 1, 2, 3
 enter = 'Enter the '
@@ -15,7 +52,7 @@ type "n" for number of monthly payments,
 type "a" for annuity monthly payment amount,
 type "p" for loan principal:
 ''')
-    choice_dict[choice]()
+    # choice_dict[choice]()
 
 
 def number_of_payments_branch():  # n
@@ -55,7 +92,9 @@ def ask_for_data_without(skip: int):
     data[i] /= 1200  # converting annually percents into a monthly floating number
 
 
-choice_dict = {'n': number_of_payments_branch,
-               'a': monthly_payment_branch,
-               'p': loan_principal_branch}
-main_menu()
+# choice_dict = {'n': number_of_payments_branch,
+#                'a': monthly_payment_branch,
+#                'p': loan_principal_branch}
+# main_menu()
+
+main()
