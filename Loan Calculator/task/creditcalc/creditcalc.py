@@ -3,39 +3,74 @@ import sys
 from math import ceil, log, pow
 from typing import Dict, Any
 
-typ, pay, pri, per, inr = 'type', 'payment', 'principal', 'periods', 'interest'
 
 
 def main():
-    args = define_arguments()
-    print(args)
-    if errors_found(args):
+    if debug:
+        print(args)
+    if errors_found():
         print('Incorrect parameters')
     else:
-        # todo the main branch
-        pass
+        args[inr] /= 1200  # converting interest rate into monthly decimals
+        type_actions[args[typ]]()
 
 
 def define_arguments() -> Dict[str, Any]:
     dash = '--'
     parser = argparse.ArgumentParser(description='This program calculates different parameters of a loan')
-    parser.add_argument(dash + typ, choices=['annuity', 'diff'])
+    parser.add_argument(dash + typ, choices=[ann, dif])
     parser.add_argument(dash + pay, type=float)
-    parser.add_argument(dash + pri, type=int)
+    parser.add_argument(dash + prc, type=int)
     parser.add_argument(dash + per, type=int)
     parser.add_argument(dash + inr, type=float)
     return vars(parser.parse_args())
 
 
-def errors_found(args: Dict[str, Any]) -> bool:
-    diff_payment_collision = args.get(typ) and args.get(typ) == 'diff' and args.get(pay)
-    interest_not_found = args.get(inr) is None
-    lack_of_params = 4 > len(list(filter(lambda x: x[1] is not None, args.items())))
-    return diff_payment_collision or interest_not_found or lack_of_params
+def errors_found() -> bool:
+    if debug:
+        print(list(filter(lambda x: x[1] and (type(x[1]) is str or x[1] > 0), args.items())))
+    return not args.get(typ) \
+        or not args.get(inr) \
+        or args.get(typ) == dif and args.get(pay) is not None \
+        or 4 > len(list(filter(lambda x: x[1] and (type(x[1]) is str or x[1] > 0), args.items())))
 
 
-# todo: add Calculation of differentiated payments
-#  replace old params with new ones
+def diff_branch():
+    months = [m for m in range(1, args[per] + 1)]
+    payments = list(map(calc_diff_payment, months))
+    if debug:
+        print(payments)
+    for m in months:
+        print(f'Month {m}: payment is {payments[m - 1]}')
+    print(f'\nOverpayment = {sum(payments) - args.get(prc)}')
+
+
+def calc_diff_payment(m: int):
+    pp = args.get(prc)
+    nn = args.get(per)
+    ii = args.get(inr)
+    return ceil(pp / nn + ii * (pp - pp * (m - 1) / nn))
+
+
+def annuity_branch():
+    if args.get(pay) is None:
+        annuity_payment_branch()
+
+
+def annuity_payment_branch():
+    ann_pay = ceil(args.get(prc) * common_calc_2())
+    overpayment = ceil(ann_pay * args.get(per) - args.get(prc))
+    print(f'Your annuity payment = {ann_pay}!')
+    print(f'Overpayment = {overpayment}')
+
+
+# todo
+#  Example 4: calculate differentiated payments given a principal of 500,000 over 8 months at an interest rate of 7.8%
+
+def common_calc_2():
+    pow_ = pow(1 + args.get(inr), args.get(per))
+    return args.get(inr) * pow_ / (pow_ - 1)
+
 
 [p, a, n, i] = [r for r in range(4)]  # indices:  0, 1, 2, 3
 enter = 'Enter the '
@@ -96,5 +131,10 @@ def ask_for_data_without(skip: int):
 #                'a': monthly_payment_branch,
 #                'p': loan_principal_branch}
 # main_menu()
-
+typ, pay, prc, per, inr = 'type', 'payment', 'principal', 'periods', 'interest'
+ann, dif = 'annuity', 'diff'
+debug = True
+type_actions = {ann: annuity_branch,
+                dif: diff_branch}
+args = define_arguments()
 main()
